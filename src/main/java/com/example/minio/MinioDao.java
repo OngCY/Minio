@@ -1,24 +1,18 @@
 package com.example.minio;
 
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 //import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import io.minio.BucketEventListener;
 import io.minio.MinioClient;
 import io.minio.ObjectStat;
 import io.minio.Result;
 import io.minio.errors.MinioException;
 import io.minio.messages.Bucket;
-import io.minio.messages.EventType;
 import io.minio.messages.Item;
-import io.minio.messages.NotificationConfiguration;
-import io.minio.messages.QueueConfiguration;
-import io.minio.notification.NotificationInfo;
 
 @Repository
 public class MinioDao
@@ -33,7 +27,8 @@ public class MinioDao
         this.minioClient = minioClient;
     }
 
-    public void PutObjectToBucket(String bucket, String objectName, String fileName, String contentType)
+    //Upload object to bucket
+    public void PutObject(String bucket, String objectName, String fileName, String contentType)
     {
         try 
         {
@@ -49,68 +44,7 @@ public class MinioDao
         }
     }
 
-    public String GetBucketNotification(String bucket)
-    {
-        String notifications = "";
-
-        try
-        {
-            NotificationConfiguration notificationConfiguration = minioClient.getBucketNotification(bucket);
-            notifications = notificationConfiguration.toString();
-        }
-        catch (MinioException e) 
-        {
-            System.out.println("Minio Error occurred: " + e.toString());
-        }
-        catch(Exception e)
-        {
-            System.out.println("Error occurred: " + e.toString());
-        }
-
-        return notifications;
-    }
-    
-    public void SetBucketCreateNotification(String bucket)
-    {
-        try
-        {
-            NotificationConfiguration notificationConfiguration = minioClient.getBucketNotification(bucket);
-
-            //Add a new SQS configuration.
-            List<QueueConfiguration> queueConfigurationList = notificationConfiguration.queueConfigurationList();
-            QueueConfiguration queueConfiguration = new QueueConfiguration();
-            queueConfiguration.setQueue("arn:minio:sqs::1:webhook");
-
-            List<EventType> eventList = new LinkedList<>();
-            eventList.add(EventType.OBJECT_CREATED_ANY);
-            queueConfiguration.setEvents(eventList);
-
-            //Filter filter = new Filter();
-            //filter.setPrefixRule("images");
-            //filter.setSuffixRule("pg");
-            //queueConfiguration.setFilter(filter);
-
-            queueConfigurationList.add(queueConfiguration);
-            notificationConfiguration.setQueueConfigurationList(queueConfigurationList);
-
-            //Set updated notification configuration
-            minioClient.setBucketNotification(bucket, notificationConfiguration);
-
-            //Set create object event listener
-            minioClient.listenBucketNotification(bucket, "", "",
-            new String[]{"s3:ObjectCreated:*"}, new TestBucketListener());
-        }
-        catch (MinioException e) 
-        {
-            System.out.println("Minio Error occurred: " + e.toString());
-        }
-        catch(Exception e)
-        {
-            System.out.println("Error occurred: " + e.toString());
-        }
-    }
-
-    //List objects' metadata from a bucket
+    //Retrieve objects' metadata from a bucket
     public List<ObjectMeta> ListObjectsInBucket(String bucket)
     {
         List<ObjectMeta> resultList = new ArrayList<>();
@@ -143,7 +77,7 @@ public class MinioDao
         return resultList;
     } 
 
-    //Get the metadata of the object (bucket name, filename, content type, created time, size)
+    //Get the metadata of an object (bucket name, filename, content type, created time, size)
     public ObjectMeta GetObjectStat(String bucket, String objectName)
     {
         ObjectMeta objectMeta = new ObjectMeta();
@@ -169,6 +103,7 @@ public class MinioDao
         return objectMeta;
     }
 
+    //Get a list of buckets
     public String GetBuckets()
     {
         String buckets = "";
@@ -192,14 +127,5 @@ public class MinioDao
         }
 
         return buckets;
-    }
-    class TestBucketListener implements BucketEventListener 
-    {
-        @Override
-        public void updateEvent(NotificationInfo info) 
-        {
-          System.out.println(info.records[0].s3.bucket.name + "/"
-              + info.records[0].s3.object.key + " has been created");
-        }
     }
 }

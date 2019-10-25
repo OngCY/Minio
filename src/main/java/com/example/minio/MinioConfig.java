@@ -2,6 +2,7 @@ package com.example.minio;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+
 import io.minio.MinioClient;
 import io.minio.errors.MinioException;
 

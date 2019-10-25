@@ -15,11 +15,13 @@ import org.springframework.web.bind.annotation.RestController;
 public class MinioController
 {
     private MinioDao minioDao;
+    private MinioNotification minioNotification;
 
     @Autowired
-    public MinioController(MinioDao minioDao) 
+    public MinioController(MinioDao minioDao, MinioNotification minioNotification) 
     {
         this.minioDao = minioDao;
+        this.minioNotification = minioNotification;
     }
 
     @GetMapping("/getBuckets")
@@ -35,14 +37,14 @@ public class MinioController
                             @RequestParam(value="fileName") String fileName,
                             @RequestParam(value="contentType") String contentType) 
     {
-        minioDao.PutObjectToBucket(bucket, objectName, fileName, contentType);
+        minioDao.PutObject(bucket, objectName, fileName, contentType);
     }
 
     @GetMapping("/getNotification")
     @ResponseBody
     public String GetNotification(@RequestParam("bucket") String bucket)
     {
-        String notification = minioDao.GetBucketNotification(bucket);
+        String notification = minioNotification.GetNotification(bucket);
         return notification;
     }
 
@@ -50,7 +52,14 @@ public class MinioController
     @ResponseBody
     public void SetCreateNotification(@RequestParam("bucket") String bucket)
     {
-        minioDao.SetBucketCreateNotification(bucket);
+        minioNotification.SetCreateNotification(bucket);
+    }
+
+    @GetMapping("/setNotificationListener")
+    @ResponseBody
+    public void SetNotificationListener(@RequestParam("bucket") String bucket)
+    {
+        minioNotification.SetCreateListener(bucket);
     }
 
     @GetMapping("/listObjects")
