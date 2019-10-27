@@ -3,7 +3,9 @@ package com.example.minio;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -23,16 +25,19 @@ public class MinioController
         this.minioDao = minioDao;
         this.minioNotification = minioNotification;
     }
-
-    @GetMapping("/getBuckets")
-    public String GetBuckets()
+    
+    @GetMapping("/downloadObject")
+    @ResponseBody
+    public String DownloadObject(@RequestParam("bucket") String bucket, 
+                                 @RequestParam("objectName") String objectName,
+                                 @PathVariable("location") String location)
     {
-        String buckets = minioDao.GetBuckets();
-        return buckets;
+        String result = minioDao.DownloadObject(bucket, objectName, location);
+        return result;
     }
 
-    @PostMapping("/postObject")
-    public void postObject(@RequestParam(value="bucket") String bucket,
+    @PostMapping("/putObject")
+    public void PutObject(@RequestParam(value="bucket") String bucket,
                             @RequestParam(value="objectName") String objectName,
                             @RequestParam(value="fileName") String fileName,
                             @RequestParam(value="contentType") String contentType) 
@@ -48,14 +53,15 @@ public class MinioController
         return notification;
     }
 
-    @GetMapping("/setCreateNotification")
+    //This call needs to be run only once for a bucket
+    @PostMapping("/setCreateNotification")
     @ResponseBody
     public void SetCreateNotification(@RequestParam("bucket") String bucket)
     {
         minioNotification.SetCreateNotification(bucket);
     }
 
-    @GetMapping("/setNotificationListener")
+    @PostMapping("/setNotificationListener")
     @ResponseBody
     public void SetNotificationListener(@RequestParam("bucket") String bucket)
     {
@@ -109,5 +115,12 @@ public class MinioController
         stats += '\n';
 
         return stats;
+    }
+
+    @GetMapping("/getBuckets")
+    public String GetBuckets()
+    {
+        String buckets = minioDao.GetBuckets();
+        return buckets;
     }
 }
